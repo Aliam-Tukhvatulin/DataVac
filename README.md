@@ -1,6 +1,6 @@
 # 💉 Датавак 2.0 (Work in Progress — MVP)
 
-<img src="https://github.com/your-github/datavac-2.0/blob/main/assets/Logo.png" alt="Датавак 2.0 Logo" width="250" height="250">
+<img src="https://github.com/Aliam-Tukhvatulin/DataVac/blob/96d92ed9b9689cfc28dec2a5bbabfc8696d68767/logo.png" alt="Датавак 2.0 Logo" width="250" height="250">
 
 Датавак 2.0 — веб-каталог вакцин, зарегистрированных в РФ. Проект по замене текущей версии (Битрикс) на современный стек (Python/Django + PostgreSQL).
 
