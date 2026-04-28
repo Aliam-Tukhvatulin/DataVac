@@ -1,0 +1,1507 @@
+# Демонстрационная версия API для портфолио.
+# Не предназначена для промышленного использования. Все права защищены.
+openapi: 3.0.3
+info:
+  title: Демо-проект "Датавак 2.0" API
+  description: |
+    Демонстрационная спецификация REST API для портфолио.
+    Реальные эндпоинты, схемы и аутентификация заменены на обобщённые.
+  version: demo-2.0.0
+  contact:
+    name: Демо-проект
+    url: https://example.com
+
+servers:
+  - url: https://api.example.com/demo
+    description: Демо-сервер (недоступен)
+
+tags:
+  - name: "[Демо] Публичные — Поиск и фильтрация"
+  - name: "[Демо] Публичные — Вакцины"
+  - name: "[Демо] Публичные — Инфекции"
+  - name: "[Демо] Публичные — Противопоказания"
+  - name: "[Демо] Публичные — Ингредиенты"
+  - name: "[Демо] Публичные — Подсказки"
+  - name: "[Демо] Админка — Авторизация"
+  - name: "[Демо] Админка — Карточки вакцин"
+  - name: "[Демо] Админка — Версии и модерация"
+  - name: "[Демо] Админка — Популярность"
+  - name: "[Демо] Админка — Парсинг"
+  - name: "[Демо] Админка — Уведомления (опционально)"
+  - name: "[Демо] Админка — Пользователи (backlog)"
+
+paths:
+  # ======= ПУБЛИЧНЫЕ =======
+  /demo/search:
+    get:
+      tags: ["[Демо] Публичные — Поиск и фильтрация"]
+      summary: Поиск (демо)
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, enum: [10, 20, 50] }
+        - name: infection_id
+          in: query
+          schema: { type: integer }
+        - name: contraindication_id
+          in: query
+          schema: { type: integer }
+        - name: ingredient_id
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Результаты поиска
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Пустой запрос или некорректный параметр q
+        '429':
+          description: Слишком много запросов (rate limit reached)
+
+  /demo/search/suggestions:
+    get:
+      tags: ["[Демо] Публичные — Поиск и фильтрация"]
+      summary: Подсказки при вводе (демо)
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: "Сгруппированные подсказки"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestionsResponse'
+        '400':
+          description: Пустой запрос
+        '429':
+          description: Слишком много запросов
+
+  /demo/vaccines:
+    get:
+      tags: ["[Демо] Публичные — Вакцины"]
+      summary: Список вакцин (демо)
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, enum: [10, 20, 50] }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [name_short, name_official] }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc], default: asc }
+        - name: infection_id
+          in: query
+          schema: { type: integer }
+        - name: contraindication_id
+          in: query
+          schema: { type: integer }
+        - name: ingredient_id
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Список вакцин
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaccineListResponse'
+        '429':
+          description: Слишком много запросов
+
+  /demo/vaccines/{vaccine_id}:
+    get:
+      tags: ["[Демо] Публичные — Вакцины"]
+      summary: Карточка вакцины (демо)
+      parameters:
+        - name: vaccine_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Информация о вакцине
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaccineCardResponse'
+        '404':
+          description: Не найдена
+        '410':
+          description: Удалена (soft delete)
+        '429':
+          description: Слишком много запросов
+
+  /demo/vaccines/{vaccine_id}/pdf:
+    get:
+      tags: ["[Демо] Публичные — Вакцины"]
+      summary: PDF-версия (демо)
+      parameters:
+        - name: vaccine_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: PDF-файл
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Не найдена
+        '429':
+          description: Слишком много запросов
+        '500':
+          description: Ошибка генерации PDF
+
+  /demo/infections:
+    get:
+      tags: ["[Демо] Публичные — Инфекции"]
+      summary: Список инфекций (демо)
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, enum: [10, 20, 50] }
+        - name: calendar_id
+          in: query
+          schema: { type: integer }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [name, calendar], default: name }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc], default: asc }
+      responses:
+        '200':
+          description: Список инфекций
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfectionListResponse'
+        '429':
+          description: Слишком много запросов
+
+  /demo/infections/{infection_id}/vaccines:
+    get:
+      tags: ["[Демо] Публичные — Инфекции"]
+      summary: Вакцины от инфекции (демо)
+      parameters:
+        - name: infection_id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, enum: [10, 20, 50] }
+      responses:
+        '200':
+          description: Список вакцин
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaccineListResponse'
+        '404':
+          description: Инфекция не найдена
+        '429':
+          description: Слишком много запросов
+
+  /demo/calendars:
+    get:
+      tags: ["[Демо] Публичные — Инфекции"]
+      summary: Список календарей (демо)
+      responses:
+        '200':
+          description: Список календарей
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarListResponse'
+
+  /demo/contraindications:
+    get:
+      tags: ["[Демо] Публичные — Противопоказания"]
+      summary: Список противопоказаний (демо)
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, enum: [10, 20, 50] }
+        - name: category_id
+          in: query
+          schema: { type: integer }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [name, category], default: name }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc], default: asc }
+      responses:
+        '200':
+          description: Список противопоказаний
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContraindicationListResponse'
+        '429':
+          description: Слишком много запросов
+
+  /demo/contraindications/{contraindication_id}/vaccines:
+    get:
+      tags: ["[Демо] Публичные — Противопоказания"]
+      summary: Вакцины с противопоказанием (демо)
+      parameters:
+        - name: contraindication_id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, enum: [10, 20, 50] }
+      responses:
+        '200':
+          description: Список вакцин
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaccineListResponse'
+        '404':
+          description: Противопоказание не найдено
+        '429':
+          description: Слишком много запросов
+
+  /demo/contraindications/categories:
+    get:
+      tags: ["[Демо] Публичные — Противопоказания"]
+      summary: Категории противопоказаний (демо)
+      responses:
+        '200':
+          description: Список категорий
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+
+  /demo/ingredients:
+    get:
+      tags: ["[Демо] Публичные — Ингредиенты"]
+      summary: Список ингредиентов (демо)
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, enum: [10, 20, 50] }
+        - name: class_id
+          in: query
+          schema: { type: integer }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [name, class], default: name }
+        - name: order
+          in: query
+          schema: { type: string, enum: [asc, desc], default: asc }
+      responses:
+        '200':
+          description: Список ингредиентов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngredientListResponse'
+        '429':
+          description: Слишком много запросов
+
+  /demo/ingredients/{ingredient_id}/vaccines:
+    get:
+      tags: ["[Демо] Публичные — Ингредиенты"]
+      summary: Вакцины с ингредиентом (демо)
+      parameters:
+        - name: ingredient_id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, enum: [10, 20, 50] }
+      responses:
+        '200':
+          description: Список вакцин
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaccineListResponse'
+        '404':
+          description: Ингредиент не найден
+        '429':
+          description: Слишком много запросов
+
+  /demo/ingredients/classes:
+    get:
+      tags: ["[Демо] Публичные — Ингредиенты"]
+      summary: Классы ингредиентов (демо)
+      responses:
+        '200':
+          description: Список классов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassListResponse'
+
+  /demo/popup-comments/{comment_id}:
+    get:
+      tags: ["[Демо] Публичные — Подсказки"]
+      summary: Текст подсказки (демо)
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Текст подсказки
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopupComment'
+        '404':
+          description: "Подсказка не найдена («Информация отсутствует»)"
+
+  # ======= АДМИНКА =======
+  /demo/admin/auth/login:
+    post:
+      tags: ["[Демо] Админка — Авторизация"]
+      summary: Авторизация (демо)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: JWT-токен и роль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Не указан логин или пароль
+        '401':
+          description: Неверный логин или пароль
+        '429':
+          description: Слишком много попыток
+
+  /demo/admin/auth/restore:
+    post:
+      tags: ["[Демо] Админка — Авторизация"]
+      summary: Сброс пароля (демо)
+      description: >
+        Принимает email, генерирует новый пароль и отправляет письмо с логином и паролем.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+      responses:
+        '200':
+          description: Логин и новый пароль отправлены
+        '400':
+          description: Не указан email
+        '404':
+          description: Пользователь не найден
+
+  /demo/admin/vaccines:
+    get:
+      tags: ["[Демо] Админка — Карточки вакцин"]
+      summary: Список вакцин (админка, демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, enum: [10, 20, 50] }
+      responses:
+        '200':
+          description: Список вакцин
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminVaccineListResponse'
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+
+    post:
+      tags: ["[Демо] Админка — Карточки вакцин"]
+      summary: Создать карточку (демо)
+      description: |
+        Демонстрационная версия. Роль из JWT определяет статус черновика.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VaccineCardRequest'
+      responses:
+        '201':
+          description: Создана новая версия
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+        '400':
+          description: Ошибка валидации
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '409':
+          description: Карточка с таким названием уже существует
+
+  /demo/admin/vaccines/{vaccine_id}:
+    put:
+      tags: ["[Демо] Админка — Карточки вакцин"]
+      summary: Редактировать карточку (демо)
+      description: |
+        Демо: при редактировании создаётся новая версия.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: vaccine_id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VaccineCardRequest'
+      responses:
+        '200':
+          description: Новая версия создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+        '400':
+          description: Ошибка валидации
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Вакцина не найдена
+        '409':
+          description: Карточка с таким названием уже существует
+
+    delete:
+      tags: ["[Демо] Админка — Карточки вакцин"]
+      summary: Мягкое удаление (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: vaccine_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Помечена удалённой
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав (только Администратор)
+        '404':
+          description: Вакцина не найдена
+
+  /demo/admin/vaccines/{vaccine_id}/restore:
+    post:
+      tags: ["[Демо] Админка — Карточки вакцин"]
+      summary: Отменить удаление (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: vaccine_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Удаление отменено
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Вакцина не найдена или не была удалена
+        '410':
+          description: Время для отмены истекло
+
+  /demo/admin/vaccines/{vaccine_id}/versions:
+    get:
+      tags: ["[Демо] Админка — Версии и модерация"]
+      summary: История версий (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: vaccine_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Список версий
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionListResponse'
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Вакцина не найдена
+
+  /demo/admin/versions/{version_id}/preview:
+    get:
+      tags: ["[Демо] Админка — Версии и модерация"]
+      summary: Предпросмотр версии (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: version_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Данные версии
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaccineCardResponse'
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Версия не найдена
+
+  /demo/admin/versions/{version_id}/diff:
+    get:
+      tags: ["[Демо] Админка — Версии и модерация"]
+      summary: Сравнение версий (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: version_id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: compare_to
+          in: query
+          required: true
+          description: ID версии для сравнения
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Различия между версиями
+        '400':
+          description: Не указан ID версии для сравнения
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Одна из версий не найдена
+
+  /demo/admin/versions/{version_id}/submit:
+    patch:
+      tags: ["[Демо] Админка — Версии и модерация"]
+      summary: Отправить на модерацию (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: version_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Статус изменён на ожидание проверки
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав (только Редактор)
+        '404':
+          description: Версия не найдена
+        '409':
+          description: Неверный статус версии (можно отправить только черновик)
+
+  /demo/admin/versions/{version_id}/approve:
+    post:
+      tags: ["[Демо] Админка — Версии и модерация"]
+      summary: Утвердить версию (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: version_id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Версия утверждена
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав (только Администратор)
+        '404':
+          description: Версия не найдена
+        '409':
+          description: Неверный статус версии (ожидает проверки)
+
+  /demo/admin/versions/{version_id}/reject:
+    post:
+      tags: ["[Демо] Админка — Версии и модерация"]
+      summary: Отклонить версию (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: version_id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comment:
+                  type: string
+      responses:
+        '200':
+          description: Версия отклонена
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав (только Администратор)
+        '404':
+          description: Версия не найдена
+        '409':
+          description: Неверный статус версии
+
+  /demo/admin/versions/{version_id}/rollback:
+    post:
+      tags: ["[Демо] Админка — Версии и модерация"]
+      summary: Откатить версию (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: version_id
+          in: path
+          required: true
+          description: ID предыдущей утверждённой версии
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Создана новая версия из указанной
+        '400':
+          description: Указанная версия не является предыдущей утверждённой
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав (только Администратор)
+        '404':
+          description: Версия не найдена
+        '409':
+          description: Версия была изменена другим пользователем
+        '422':
+          description: Конфликт структуры данных
+        '500':
+          description: Сбой при записи версии
+
+  /demo/admin/moderations:
+    get:
+      tags: ["[Демо] Админка — Версии и модерация"]
+      summary: Список на модерации (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, enum: [10, 20, 50] }
+      responses:
+        '200':
+          description: Список версий со статусом pending_review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionListResponse'
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав (только Администратор)
+
+  /demo/admin/popularity:
+    get:
+      tags: ["[Демо] Админка — Популярность"]
+      summary: Список популярности (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: entity_type
+          in: query
+          schema:
+            type: string
+            enum: [vaccine, infection, contraindication, ingredient]
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, enum: [10, 20, 50] }
+      responses:
+        '200':
+          description: Список с полем popularity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PopularityListResponse'
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+
+    patch:
+      tags: ["[Демо] Админка — Популярность"]
+      summary: Обновить популярность (демо)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PopularityUpdateRequest'
+      responses:
+        '200':
+          description: Популярность обновлена
+        '400':
+          description: Некорректное значение
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+
+  /demo/admin/parsing/run-all:
+    post:
+      tags: ["[Демо] Админка — Парсинг"]
+      summary: Запустить полный парсинг (демо)
+      description: |
+        Демо: асинхронный запуск парсинга.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                source:
+                  type: string
+                  enum: [OHLP, GRLS]
+                  default: OHLP
+                  description: Источник (демо)
+      responses:
+        '202':
+          description: Парсинг запущен
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав (только Администратор)
+        '409':
+          description: Предыдущий запуск ещё не завершён
+
+  /demo/admin/parsing/run/{vaccine_id}:
+    post:
+      tags: ["[Демо] Админка — Парсинг"]
+      summary: Проверить обновление вакцины (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: vaccine_id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                source:
+                  type: string
+                  enum: [OHLP, GRLS]
+                  default: OHLP
+      responses:
+        '202':
+          description: Парсинг для вакцины запущен
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав (только Администратор)
+        '404':
+          description: Вакцина не найдена
+        '409':
+          description: Предыдущий запуск ещё не завершён
+
+  /demo/admin/parsing/queue:
+    get:
+      tags: ["[Демо] Админка — Парсинг"]
+      summary: Очередь результатов парсинга (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: page_size
+          in: query
+          schema: { type: integer, default: 20, enum: [10, 20, 50] }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processed, error]
+        - name: source
+          in: query
+          schema:
+            type: string
+            enum: [OHLP, GRLS]
+      responses:
+        '200':
+          description: Список записей очереди
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParsingQueueListResponse'
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+
+  /demo/admin/parsing/logs:
+    get:
+      tags: ["[Демо] Админка — Парсинг"]
+      summary: Логи парсинга (демо)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Логи парсинга
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParsingLogListResponse'
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+
+  /demo/admin/notifications:
+    get:
+      tags: ["[Демо] Админка — Уведомления (опционально)"]
+      summary: Уведомления (демо)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Список уведомлений
+        '401':
+          description: Не авторизован
+        '403':
+          description: Недостаточно прав
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ---------- Поиск ----------
+    SearchResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/VaccineSearchItem'
+
+    VaccineSearchItem:
+      type: object
+      properties:
+        vaccine_id:
+          type: integer
+        vaccine_name_short:
+          type: string
+        vaccine_name_long:
+          type: string
+        infections:
+          type: array
+          items:
+            $ref: '#/components/schemas/InfectionBrief'
+        route_of_administration:
+          type: string
+        contraindications:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContraindicationBrief'
+        age_range:
+          type: string
+        pregnancy_breastfeeding_info:
+          type: string
+        availability_status:
+          type: string
+          enum: [Доступна, Недоступна]
+
+    SuggestionsResponse:
+      type: object
+      properties:
+        vaccines:
+          type: array
+          items:
+            $ref: '#/components/schemas/SuggestionItem'
+        infections:
+          type: array
+          items:
+            $ref: '#/components/schemas/SuggestionItem'
+        contraindications:
+          type: array
+          items:
+            $ref: '#/components/schemas/SuggestionItem'
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/SuggestionItem'
+
+    SuggestionItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    # ---------- Вакцины ----------
+    VaccineListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/VaccineSearchItem'
+
+    VaccineCardResponse:
+      type: object
+      properties:
+        vaccine_id:
+          type: integer
+        vaccine_name_short:
+          type: string
+        vaccine_name_long:
+          type: string
+        comment_to_show:
+          type: string
+          nullable: true
+        availability_status:
+          type: string
+          enum: [Доступна, Недоступна]
+        update_date:
+          type: string
+          format: date-time
+        infections:
+          type: array
+          items:
+            $ref: '#/components/schemas/InfectionBrief'
+        routes_of_administration:
+          type: array
+          items:
+            type: string
+        contraindications:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContraindicationBrief'
+        ages:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgeItem'
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComponentBrief'
+        compatibility:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompatibilityItem'
+        instructions_text:
+          type: string
+        links:
+          type: object
+          properties:
+            specialists:
+              type: string
+            non_specialists:
+              type: string
+
+    AgeItem:
+      type: object
+      properties:
+        age_from:
+          type: string
+        age_to:
+          type: string
+        popup_comment:
+          type: string
+          nullable: true
+
+    CompatibilityItem:
+      type: object
+      properties:
+        vaccine_id:
+          type: integer
+        vaccine_name_short:
+          type: string
+        compatibility_status:
+          type: string
+
+    # ---------- Инфекции ----------
+    InfectionListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InfectionItem'
+
+    InfectionItem:
+      type: object
+      properties:
+        infection_id:
+          type: integer
+        infection_name:
+          type: string
+        calendar_name:
+          type: string
+
+    InfectionBrief:
+      type: object
+      properties:
+        infection_id:
+          type: integer
+        infection_name:
+          type: string
+
+    CalendarListResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              calendar_id:
+                type: integer
+              calendar_name:
+                type: string
+
+    # ---------- Противопоказания ----------
+    ContraindicationListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContraindicationItem'
+
+    ContraindicationItem:
+      type: object
+      properties:
+        contraindication_id:
+          type: integer
+        contraindication_name:
+          type: string
+        contraindication_long_name:
+          type: string
+        category_name:
+          type: string
+
+    ContraindicationBrief:
+      type: object
+      properties:
+        contraindication_id:
+          type: integer
+        contraindication_name:
+          type: string
+
+    CategoryListResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryItem'
+
+    CategoryItem:
+      type: object
+      properties:
+        category_id:
+          type: integer
+        category_name:
+          type: string
+
+    # ---------- Ингредиенты ----------
+    IngredientListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngredientItem'
+
+    IngredientItem:
+      type: object
+      properties:
+        component_id:
+          type: integer
+        component_name:
+          type: string
+        class_name:
+          type: string
+        description:
+          type: string
+
+    ComponentBrief:
+      type: object
+      properties:
+        component_id:
+          type: integer
+        component_name:
+          type: string
+        class_name:
+          type: string
+
+    ClassListResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClassItem'
+
+    ClassItem:
+      type: object
+      properties:
+        class_id:
+          type: integer
+        class_name:
+          type: string
+
+    # ---------- Подсказки ----------
+    PopupComment:
+      type: object
+      properties:
+        popup_comment_id:
+          type: integer
+        popup_comment_text:
+          type: string
+
+    # ---------- Авторизация ----------
+    LoginRequest:
+      type: object
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        role:
+          type: string
+
+    # ---------- Админка ----------
+    AdminVaccineListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/VaccineSearchItem'
+
+    VaccineCardRequest:
+      type: object
+      properties:
+        vaccine_name_short:
+          type: string
+        vaccine_name_long:
+          type: string
+        comment_to_show:
+          type: string
+        infection_ids:
+          type: array
+          items:
+            type: integer
+        contraindication_ids:
+          type: array
+          items:
+            type: integer
+        component_ids:
+          type: array
+          items:
+            type: integer
+        ages:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgeInput'
+        route_of_administration_id:
+          type: integer
+        compatibility:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompatibilityInput'
+
+    AgeInput:
+      type: object
+      properties:
+        age_from_id:
+          type: integer
+        age_to_id:
+          type: integer
+
+    CompatibilityInput:
+      type: object
+      properties:
+        vaccine_id_2:
+          type: integer
+        compatibility_status:
+          type: string
+
+    VersionResponse:
+      type: object
+      properties:
+        version_id:
+          type: integer
+        vaccine_id:
+          type: integer
+        version_number:
+          type: integer
+        status_id:
+          type: string
+
+    VersionListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              version_id:
+                type: integer
+              version_number:
+                type: integer
+              status_id:
+                type: string
+              created_at:
+                type: string
+                format: date-time
+              created_by:
+                type: string
+              approved_at:
+                type: string
+                format: date-time
+                nullable: true
+              approved_by:
+                type: string
+                nullable: true
+
+    PopularityListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              popularity:
+                type: integer
+              entity_type:
+                type: string
+
+    PopularityUpdateRequest:
+      type: object
+      properties:
+        entity_type:
+          type: string
+          enum: [vaccine, infection, contraindication, ingredient]
+        id:
+          type: integer
+        popularity:
+          type: integer
+
+    ParsingQueueListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              source:
+                type: string
+              change_type:
+                type: string
+              status:
+                type: string
+              detected_at:
+                type: string
+                format: date-time
+
+    ParsingLogListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              started_at:
+                type: string
+                format: date-time
+              finished_at:
+                type: string
+                format: date-time
+                nullable: true
+              status:
+                type: string
+              error_text:
+                type: string
+                nullable: true
+              source_url:
+                type: string
+              triggered_by:
+                type: string
