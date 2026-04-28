@@ -41,7 +41,7 @@
 ## Артефакты
 
 📄 [Use Cases](https://github.com/Aliam-Tukhvatulin/DataVac/blob/8f8bc9794ba0625155e9e0c1911b9e7774234c94/docs/UC.pdf)  
-📄 [SRS](https://github.com/Aliam-Tukhvatulin/DataVac/blob/8f8bc9794ba0625155e9e0c1911b9e7774234c94/docs/SRS.pd)  
+📄 [SRS](https://github.com/Aliam-Tukhvatulin/DataVac/blob/8f8bc9794ba0625155e9e0c1911b9e7774234c94/docs/SRS.pdf)  
 ⚙️ [Спецификация API (YAML)](https://github.com/Aliam-Tukhvatulin/DataVac/blob/8f8bc9794ba0625155e9e0c1911b9e7774234c94/docs/%D0%A1%D0%BF%D0%B5%D1%86%D0%B8%D1%84%D0%B8%D0%BA%D0%B0%D1%86%D0%B8%D1%8F%20REST%20API%20%D0%94%D0%B0%D1%82%D0%B0%D0%B2%D0%B0%D0%BA%202.0.yaml)  
 
 ## Лицензия
